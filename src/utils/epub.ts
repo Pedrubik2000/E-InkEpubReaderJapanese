@@ -3,7 +3,7 @@ import JSZip from "jszip";
 import { XMLParser } from "fast-xml-parser";
 import balanced from "balanced-match";
 
-interface Book {
+export interface Book {
 	title: string;
 	altTitle: string;
 	creator: string[] | string;
@@ -14,16 +14,13 @@ interface Book {
 	readingDirection: string;
 	pageDirection: string;
 	html: string;
+	css: string;
 	blobs: imageBlobObject[];
 }
-interface imageBlobObject {
+export interface imageBlobObject {
 	name: string;
 	blob: Blob;
 }
-
-// const epubFile = fs.readFileSync(
-// 	"/home/pedro/Downloads/kumakumakuma v001.epub",
-// );
 
 export async function getBookObject(epubBuffer: Buffer | File) {
 	const epub = new JSZip();
@@ -40,12 +37,14 @@ export async function getBookObject(epubBuffer: Buffer | File) {
 		readingDirection: "",
 		pageDirection: "",
 		html: "",
+		css: "",
 		blobs: [],
 	};
 
 	const epubContent = await epub.loadAsync(epubBuffer);
 	const epubObject = epubContent.files;
 	let htmlCombined = "";
+	let cssCombined = "";
 	for (const [key, values] of Object.entries(epubObject)) {
 		// console.log({ key, values });
 		// if (key.includes(".xml")) {
@@ -177,25 +176,36 @@ export async function getBookObject(epubBuffer: Buffer | File) {
 			const finalResult = result.body.replace(regexHref, "");
 			htmlCombined += finalResult;
 		}
-		if (key.includes(".jpeg")) {
+		if (
+			key.includes(".jpeg") ||
+			key.includes(".jpg") ||
+			key.includes(".svg") ||
+			key.includes(".png")
+		) {
 			const data = await values.async("blob");
-			const blobWithType = new Blob([data], { type: "image/jpeg" });
+			const mimeType = key.includes(".png")
+				? "image/png"
+				: key.includes(".svg")
+					? "image/svg+xml"
+					: "image/jpeg";
+			const blobWithType = new Blob([data], { type: mimeType });
 			blobs.push({
 				name: key,
 				blob: blobWithType,
 			});
 		}
-		// if (key.includes(".css")) {
-		// 	console.log({ key, values });
-		// 	const data = await values.async("string");
-		// 	console.log(data);
-		// }
+		if (key.includes(".css")) {
+			const data = await values.async("string");
+			cssCombined += data;
+			cssCombined += "\n";
+		}
 	}
 	const multilineString = `
       <div class="main">
       ${htmlCombined}
       <div>
     `;
+	book.css = cssCombined;
 	book.html = multilineString;
 	// console.log({ multilineString });
 	// console.log({ blobs });
@@ -204,5 +214,7 @@ export async function getBookObject(epubBuffer: Buffer | File) {
 	// fs.writeFileSync("/home/pedro/index.html", multilineString);
 }
 
+// import fs from "node:fs";
+// const epubFile = fs.readFileSync("/home/pedro/Downloads/danmachi v19.epub");
 // const book1 = await getBookObject(epubFile);
-// console.lo(book1);
+// console.log(book1);
