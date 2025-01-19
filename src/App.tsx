@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import JSZip from "jszip";
+import { getBookObject } from "./utils/epub";
 
 function UploadButton() {
 	const [fileContent, setFileContent] = useState<string | null>(null);
@@ -8,21 +8,15 @@ function UploadButton() {
 	) => {
 		const file = event.target.files?.[0];
 		if (file) {
-			const zip = new JSZip();
-			const zipContent = await zip.loadAsync(file);
-			const fileNames: string[] = [];
+			const book = await getBookObject(file);
 
-			zipContent.forEach((relativePath) => {
-				fileNames.push(relativePath);
-			});
-
-			setFileContent(fileNames.join("\n"));
+			setFileContent(book.html);
 		}
 	};
 	return (
 		<div>
 			<input type="file" accept=".epub" onChange={handleFileUpload} />
-			<p>{fileContent || "No file uploaded"}</p>
+			{fileContent && <div dangerouslySetInnerHTML={{ __html: fileContent }} />}
 		</div>
 	);
 }
