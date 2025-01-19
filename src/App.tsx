@@ -1,10 +1,24 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { getBookObject } from "./utils/epub";
 import type { Book } from "./utils/epub";
-function DialogForm({ book }: { book: Book }) {
+function DialogForm({
+	book,
+	isOpen,
+	onClose,
+}: { book: Book; isOpen: boolean; onClose: () => void }) {
 	const [blobUrl, setBlobUrl] = useState("");
 	const [blobUrlName, setBlobUrlName] = useState("");
 	const [selectItems, setSelectItems] = useState<JSX.Element[]>([]);
+	const dialogRef = useRef<HTMLDialogElement | null>(null);
+
+	// Open or close the dialog when `isOpen` changes
+	useEffect(() => {
+		if (isOpen) {
+			dialogRef.current?.showModal();
+		} else {
+			dialogRef.current?.close();
+		}
+	}, [isOpen]);
 	useEffect(() => {
 		// Convert the Blob to a URL
 
@@ -49,51 +63,69 @@ function DialogForm({ book }: { book: Book }) {
 	}
 
 	return (
-		<form onSubmit={search}>
-			<label htmlFor="title">Titulo: </label>
-			<input type="text" name="title" id="title" value={book.title} />
-			<label htmlFor="altTitle">Titulo Alternativo: </label>
-			<input type="text" name="altTitle" id="altTitle" value={book.altTitle} />
-			<label htmlFor="creator">Creador/Creadores: </label>
-			<input
-				type="text"
-				name="creator"
-				id="creator"
-				value={book.creator.toString()}
-			/>
-			<label htmlFor="identifier">Identificador: </label>
-			<input
-				type="text"
-				name="identifier"
-				id="identifier"
-				value={book.identifier}
-			/>
-			<label htmlFor="language">Lenguaje: </label>
-			<input type="text" name="language" id="language" value={book.language} />
-			<label htmlFor="date">Fecha: </label>
-			<input type="text" name="date" id="date" value={book.date} />
-			<label htmlFor="publisher">Editorial: </label>
-			<input
-				type="text"
-				name="publisher"
-				id="publisher"
-				value={book.publisher}
-			/>
-			<label htmlFor="readingDirection">Direccion de Lectura: </label>
-			<input
-				type="text"
-				name="readingDirection"
-				id="readingDirection"
-				value={book.pageDirection || book.readingDirection || "ltr"}
-			/>
-			<select onChange={changeImage}>{selectItems}</select>
-			<img src={blobUrl} alt={blobUrlName} />
-			<button type="submit">Subir</button>
-		</form>
+		<dialog ref={dialogRef}>
+			<form onSubmit={search}>
+				<label htmlFor="title">Titulo: </label>
+				<input type="text" name="title" id="title" value={book.title} />
+				<label htmlFor="altTitle">Titulo Alternativo: </label>
+				<input
+					type="text"
+					name="altTitle"
+					id="altTitle"
+					value={book.altTitle}
+				/>
+				<label htmlFor="creator">Creador/Creadores: </label>
+				<input
+					type="text"
+					name="creator"
+					id="creator"
+					value={book.creator.toString()}
+				/>
+				<label htmlFor="identifier">Identificador: </label>
+				<input
+					type="text"
+					name="identifier"
+					id="identifier"
+					value={book.identifier}
+				/>
+				<label htmlFor="language">Lenguaje: </label>
+				<input
+					type="text"
+					name="language"
+					id="language"
+					value={book.language}
+				/>
+				<label htmlFor="date">Fecha: </label>
+				<input type="text" name="date" id="date" value={book.date} />
+				<label htmlFor="publisher">Editorial: </label>
+				<input
+					type="text"
+					name="publisher"
+					id="publisher"
+					value={book.publisher}
+				/>
+				<label htmlFor="readingDirection">Direccion de Lectura: </label>
+				<input
+					type="text"
+					name="readingDirection"
+					id="readingDirection"
+					value={book.pageDirection || book.readingDirection || "ltr"}
+				/>
+				<select onChange={changeImage}>{selectItems}</select>
+				<img src={blobUrl} alt={blobUrlName} />
+				<div>
+					<button type="button" onClick={onClose}>
+						Cerrar
+					</button>
+					<button type="submit">Subir</button>
+				</div>
+			</form>
+		</dialog>
 	);
 }
 function UploadButton() {
 	const [bookContent, setBookTitleContent] = useState<Book | null>(null);
+	const [isDialogOpen, setIsDialogOpen] = useState(false);
 	const handleFileUpload = async (
 		event: React.ChangeEvent<HTMLInputElement>,
 	) => {
@@ -101,13 +133,20 @@ function UploadButton() {
 		if (file) {
 			const book = await getBookObject(file);
 			setBookTitleContent(book);
+			setIsDialogOpen(true);
 		}
 	};
 	return (
 		<div className="UploadButton">
 			<input type="file" accept=".epub" onChange={handleFileUpload} />
 			<p>{bookContent?.title || "No title available"}</p>
-			{bookContent ? <DialogForm book={bookContent} /> : ""}
+			{bookContent && (
+				<DialogForm
+					book={bookContent}
+					isOpen={isDialogOpen}
+					onClose={() => setIsDialogOpen(false)}
+				/>
+			)}
 		</div>
 	);
 }
