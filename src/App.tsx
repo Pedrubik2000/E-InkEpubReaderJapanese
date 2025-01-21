@@ -3,6 +3,7 @@ import { getBookObject } from "./utils/epub";
 import type { Book } from "./utils/epub";
 import "remixicon/fonts/remixicon.css";
 import { DialogForm } from "./DialogForm";
+import { BooksFolders } from "./BooksFolders";
 
 function UploadButton() {
 	const [bookContent, setBookTitleContent] = useState<Book | null>(null);
@@ -46,15 +47,6 @@ function Toolbar() {
 	return (
 		<div style={{ borderStyle: "solid" }} className="Toolbar">
 			<UploadButton />
-		</div>
-	);
-}
-function BooksFolders() {
-	return (
-		<div className="BooksFolders">
-			<div>
-				<p>BooksFolders</p>
-			</div>
 		</div>
 	);
 }
