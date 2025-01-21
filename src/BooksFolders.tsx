@@ -1,5 +1,6 @@
 import { openDB } from "idb";
 import { useState, useEffect } from "react";
+import { Link } from "react-router";
 import "./BooksFolders.css";
 export function BooksFolders() {
 	const [bookFolders, setBookFolders] = useState<JSX.Element[] | JSX.Element>(
@@ -12,10 +13,12 @@ export function BooksFolders() {
 			const cards = folders.map((folder) => {
 				return (
 					<div key={folder.series} className="BookFolder">
-						<img
-							src={URL.createObjectURL(folder.currentCoverBlob)}
-							alt={folder.series}
-						/>
+						<Link to={`book/${folder.series}`}>
+							<img
+								src={URL.createObjectURL(folder.currentCoverBlob)}
+								alt={folder.series}
+							/>
+						</Link>
 					</div>
 				);
 			}) ?? <div />;

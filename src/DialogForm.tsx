@@ -3,6 +3,7 @@ import { openDB, deleteDB, wrap, unwrap } from "idb";
 import type { Book } from "./utils/epub";
 import type { DBSchema } from "idb";
 import "./DialogForm.css";
+import { folder } from "jszip";
 
 interface MyDB extends DBSchema {
 	[title: string]: {
@@ -59,7 +60,7 @@ export function DialogForm({
 		const series = formData.get("altTitle") as string;
 		const title = formData.get("title") as string;
 		const volNumber = formData.get("volNumber") as string;
-		const volId = `${title}${volNumber}`;
+		const volId = `${series}${volNumber}`;
 		const selectCover = formData.get("coverImages");
 		const coverBlob = (() => {
 			for (const blob of book.blobs) {
@@ -73,32 +74,27 @@ export function DialogForm({
 			const db = await openDB("einkreader", 1, {
 				upgrade(db) {
 					// Create a store of objects
-					const seriesStore = db.createObjectStore("series", {
+					db.createObjectStore("series", {
 						// The 'id' property of the object will be the key.
 						keyPath: "id",
 						// If it isn't explicitly set, create a value by auto incrementing.
-						autoIncrement: true,
 					});
-					// Create an index on the 'date' property of the objects.
-					seriesStore.createIndex("title", "title", { unique: false });
-					seriesStore.createIndex("updatedAt", "updatedAt", { unique: false });
-					// Create Volumes store
-					const volumeStore = db.createObjectStore("Volumes", {
+					db.createObjectStore("Volumes", {
 						keyPath: "id",
 					});
-					volumeStore.createIndex("seriesId", "seriesId", { unique: false });
-					volumeStore.createIndex("title", "title", { unique: false });
 				},
 			});
-			await db.add("Volumes", {
+			await db.put("Volumes", {
 				id: volId,
 				title: title,
+				folder: series,
 				vol: volNumber,
 				coverBlob: coverBlob,
 				blobs: book.blobs,
 				html: book.html,
 			});
-			await db.add("series", {
+			await db.put("series", {
+				id: series,
 				series: series,
 				updatedAt: new Date(),
 				currentCoverBlob: coverBlob,
