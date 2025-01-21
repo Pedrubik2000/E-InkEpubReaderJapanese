@@ -1,0 +1,38 @@
+dialog {
+	border-style: solid;
+	height: 80vh;
+	width: 80vw;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden; /* Prevent content overflow */
+	box-sizing: border-box;
+}
+
+dialog form {
+	flex-grow: 1;
+	display: grid;
+	grid-template-rows: auto 1fr auto;
+	gap: 0px 0px;
+	justify-items: center;
+}
+.InputDialog {
+	display: flex;
+	flex-direction: column;
+	width: 90%;
+}
+.ImageDialog {
+	contain: size;
+	display: flex;
+	justify-content: center; /* Center the content horizontally */
+	align-items: center; /* Center the content vertically */
+	height: 100%; /* Take up full available space */
+}
+.ButtonsDialog {
+	padding: 10px;
+}
+dialog img {
+	display: block;
+	width: auto; /* Make the image take the full available width */
+	height: 100%; /* Maintain aspect ratio */
+	align-self: center; /* Center the image vertically */
+}

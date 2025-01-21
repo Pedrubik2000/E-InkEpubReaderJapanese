@@ -1,128 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { getBookObject } from "./utils/epub";
 import type { Book } from "./utils/epub";
-function DialogForm({
-	book,
-	isOpen,
-	onClose,
-}: { book: Book; isOpen: boolean; onClose: () => void }) {
-	const [blobUrl, setBlobUrl] = useState("");
-	const [blobUrlName, setBlobUrlName] = useState("");
-	const [selectItems, setSelectItems] = useState<JSX.Element[]>([]);
-	const dialogRef = useRef<HTMLDialogElement | null>(null);
+import "remixicon/fonts/remixicon.css";
+import { DialogForm } from "./DialogForm";
 
-	// Open or close the dialog when `isOpen` changes
-	useEffect(() => {
-		if (isOpen) {
-			dialogRef.current?.showModal();
-		} else {
-			dialogRef.current?.close();
-		}
-	}, [isOpen]);
-	useEffect(() => {
-		// Convert the Blob to a URL
-
-		const coverBlobs = book.blobs.filter((blob) => {
-			return blob.name.includes("cover");
-		});
-		const objectUrl = URL.createObjectURL(coverBlobs[0].blob);
-		setBlobUrl(objectUrl);
-		setBlobUrlName(coverBlobs[0].name);
-
-		const listItems = coverBlobs.map((blob) => {
-			if (blob.name === coverBlobs[0].name) {
-				return (
-					<option key={blob.name} value={blob.name} selected>
-						{blob.name}
-					</option>
-				);
-			}
-			return (
-				<option key={blob.name} value={blob.name}>
-					{blob.name}
-				</option>
-			);
-		});
-		setSelectItems(listItems);
-		// Clean up the object URL after the component unmounts
-		return () => {
-			URL.revokeObjectURL(objectUrl);
-		};
-	}, [book]);
-	function search(event: React.FormEvent<HTMLFormElement>) {
-		event.preventDefault();
-	}
-	function changeImage(event: React.ChangeEvent<HTMLSelectElement>) {
-		const selectedBlob = book.blobs.find(
-			(blob) => blob.name === event.target.value,
-		);
-		if (selectedBlob) {
-			const objectUrl = URL.createObjectURL(selectedBlob.blob);
-			setBlobUrl(objectUrl);
-		}
-	}
-
-	return (
-		<dialog ref={dialogRef}>
-			<form onSubmit={search}>
-				<label htmlFor="title">Titulo: </label>
-				<input type="text" name="title" id="title" value={book.title} />
-				<label htmlFor="altTitle">Titulo Alternativo: </label>
-				<input
-					type="text"
-					name="altTitle"
-					id="altTitle"
-					value={book.altTitle}
-				/>
-				<label htmlFor="creator">Creador/Creadores: </label>
-				<input
-					type="text"
-					name="creator"
-					id="creator"
-					value={book.creator.toString()}
-				/>
-				<label htmlFor="identifier">Identificador: </label>
-				<input
-					type="text"
-					name="identifier"
-					id="identifier"
-					value={book.identifier}
-				/>
-				<label htmlFor="language">Lenguaje: </label>
-				<input
-					type="text"
-					name="language"
-					id="language"
-					value={book.language}
-				/>
-				<label htmlFor="date">Fecha: </label>
-				<input type="text" name="date" id="date" value={book.date} />
-				<label htmlFor="publisher">Editorial: </label>
-				<input
-					type="text"
-					name="publisher"
-					id="publisher"
-					value={book.publisher}
-				/>
-				<label htmlFor="readingDirection">Direccion de Lectura: </label>
-				<input
-					type="text"
-					name="readingDirection"
-					id="readingDirection"
-					value={book.pageDirection || book.readingDirection || "ltr"}
-				/>
-				<select onChange={changeImage}>{selectItems}</select>
-				<img src={blobUrl} alt={blobUrlName} />
-				<div>
-					<button type="button" onClick={onClose}>
-						Cerrar
-					</button>
-					<button type="submit">Subir</button>
-				</div>
-			</form>
-		</dialog>
-	);
-}
 function UploadButton() {
 	const [bookContent, setBookTitleContent] = useState<Book | null>(null);
 	const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -138,8 +19,19 @@ function UploadButton() {
 	};
 	return (
 		<div className="UploadButton">
-			<input type="file" accept=".epub" onChange={handleFileUpload} />
-			<p>{bookContent?.title || "No title available"}</p>
+			<label htmlFor="file-upload" style={{ cursor: "pointer" }}>
+				<i
+					className="ri-file-upload-fill"
+					style={{ fontSize: "48px", color: "#000000" }}
+				/>
+			</label>
+			<input
+				id="file-upload"
+				type="file"
+				accept=".epub"
+				onChange={handleFileUpload}
+				style={{ display: "none" }}
+			/>
 			{bookContent && (
 				<DialogForm
 					book={bookContent}
@@ -152,8 +44,17 @@ function UploadButton() {
 }
 function Toolbar() {
 	return (
-		<div className="Toolbar">
+		<div style={{ borderStyle: "solid" }} className="Toolbar">
 			<UploadButton />
+		</div>
+	);
+}
+function BooksFolders() {
+	return (
+		<div className="BooksFolders">
+			<div>
+				<p>BooksFolders</p>
+			</div>
 		</div>
 	);
 }
@@ -162,6 +63,7 @@ function App() {
 	return (
 		<>
 			<Toolbar />
+			<BooksFolders />
 		</>
 	);
 }
