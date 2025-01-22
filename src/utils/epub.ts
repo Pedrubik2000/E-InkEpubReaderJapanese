@@ -3,18 +3,14 @@ import { XMLParser } from "fast-xml-parser";
 import balanced from "balanced-match";
 
 export interface BookSection {
-	sourceFile: string;
+	id: string;
 	htmlContent: string;
 	characterCount: number;
 }
 export interface TableOfContentsItem {
-	targetFile: string;
+	id: string;
 	displayText: string;
 	cumulativeCharacterCount: number;
-}
-export interface SectionsOrderItem {
-	targetFile: string;
-	id: string;
 }
 export interface BookData {
 	bookTitle: string;
@@ -22,7 +18,7 @@ export interface BookData {
 	sections: BookSection[];
 	tableOfContents: TableOfContentsItem[];
 	globalStyles: string;
-	sectionsOrder: SectionsOrderItem[];
+	sectionsOrder: string[];
 	embeddedImages: EmbeddedImage[];
 	totalCharacterCount: number;
 }
@@ -38,10 +34,15 @@ async function parseHtmlFile(html: string): Promise<Partial<BookSection>> {
 	};
 	const regexHref = /(?<=href=")(.+?)(?=#.*?")/gm;
 	const finalResult = result.body.replace(regexHref, "");
-	const characterCount = finalResult.replace(
-		/<rt>.*?<\/rt>|<.*?>|\s/gm,
-		"",
-	).length;
+	//Thanks ttusama
+	const sanitizedHtmlForCharacterCount = finalResult
+		.replace(/<rt>.*?<\/rt>|<.*?>|\s/gm, "")
+		.replace(
+			/[^0-9A-Z○◯々-〇〻ぁ-ゖゝ-ゞァ-ヺー０-９Ａ-Ｚｦ-ﾝ\p{Radical}\p{Unified_Ideograph}]+/gimu,
+			"",
+		);
+	console.log(sanitizedHtmlForCharacterCount);
+	const characterCount = Array.from(sanitizedHtmlForCharacterCount).length;
 	let htmlContent: string;
 	if (classValue) {
 		console.log(classValue);
@@ -88,7 +89,7 @@ async function parseOpfFile(opfContent: string): Promise<Partial<BookData>> {
 		})() ?? "";
 
 	const sectionsOrder = (() => {
-		const sectionsOrderItems: SectionsOrderItem[] = [];
+		const sectionsOrderItems: string[] = [];
 		const manifestItems = jobj.package.manifest.item;
 		for (const element of manifestItems) {
 			if (element["@_media-type"].includes("html")) {
@@ -98,10 +99,8 @@ async function parseOpfFile(opfContent: string): Promise<Partial<BookData>> {
 				) {
 					continue;
 				}
-				sectionsOrderItems.push({
-					targetFile: element["@_href"],
-					id: element["@_id"],
-				});
+				const href = element["@_href"].split("/");
+				sectionsOrderItems.push(href[href.length - 1].replace(/\..*/, ""));
 			}
 		}
 		return sectionsOrderItems;
@@ -116,8 +115,9 @@ async function parseNavHtml(navHtml: string) {
 	const matchs = result.body.matchAll(/href="(.*?)".*?>(.*?)</g);
 	for (const match of matchs) {
 		if (match[1] && match[2]) {
+			const match1Splitted = match[1].replace(/#.*/, "").split("/");
 			tableOfContentsItems.push({
-				targetFile: match[1].replace(/#.*/, ""),
+				id: match1Splitted[match1Splitted.length - 1].replace(/\..*/, ""),
 				displayText: match[2],
 				cumulativeCharacterCount: 0,
 			});
@@ -166,9 +166,10 @@ export async function getBookData(epubBuffer: Buffer | File) {
 			console.log(key);
 			const data = await values.async("string");
 			const htmlData = await parseHtmlFile(data);
+			const keySplitted = key.split("/");
 			bookData.totalCharacterCount += htmlData.characterCount ?? 0;
 			bookData.sections.push({
-				sourceFile: key,
+				id: keySplitted[keySplitted.length - 1].replace(/\..*/, ""),
 				htmlContent: htmlData.htmlContent ?? "<div></div>",
 				characterCount: htmlData.characterCount ?? 0,
 			});
@@ -201,33 +202,49 @@ export async function getBookData(epubBuffer: Buffer | File) {
 	}
 	bookData.globalStyles = globalStyles;
 	bookData.embeddedImages = embeddedImages;
-	const sectionsOrderFileTargets = bookData.sectionsOrder.map((sectionItem) => {
-		const sectionItemSplitted = sectionItem.targetFile.split("/");
-		return sectionItemSplitted[sectionItemSplitted.length - 1];
-	});
-	bookData.sections.sort((a, b) => {
-		const aSplitted = a.sourceFile.split("/");
-		const bSplitted = b.sourceFile.split("/");
-		return (
-			sectionsOrderFileTargets.indexOf(aSplitted[aSplitted.length - 1]) -
-			sectionsOrderFileTargets.indexOf(bSplitted[bSplitted.length - 1])
-		);
-	});
+	bookData.sections.sort(
+		(a, b) =>
+			bookData.sectionsOrder.indexOf(a.id) -
+			bookData.sectionsOrder.indexOf(b.id),
+	);
+	let cumulativeCharacterCount = 0;
+	let i = 0;
+	for (const item of bookData.tableOfContents) {
+		while (i < bookData.sections.length) {
+			const sectionCharacterCount = bookData.sections[i].characterCount;
+			cumulativeCharacterCount += sectionCharacterCount;
+			i++;
+			if (item.id === bookData.sections[i].id) {
+				item.cumulativeCharacterCount = cumulativeCharacterCount;
+				console.log({
+					characterCount: bookData.sections[i].characterCount,
+					cumulativeCharacterCount,
+					itemCharOffset: item.cumulativeCharacterCount,
+					id: item.id,
+				});
+				break;
+			}
+		}
+	}
 	return bookData;
 }
 
-import fs from "node:fs";
-const epubFile = fs.readFileSync(
-	"/home/pedro/Downloads/kumakumakuma v001.epub",
-);
-const book1 = await getBookData(epubFile);
-console.log(book1.sectionsOrder);
-console.log(
-	book1.sections.map((section) => {
-		return {
-			sourceFile: section.sourceFile,
-			characterCount: section.characterCount,
-		};
-	}),
-);
-console.log(book1.tableOfContents);
+// import fs from "node:fs";
+// const epubFile = fs.readFileSync(
+// 	"/home/pedro/Downloads/kumakumakuma v001.epub",
+// );
+// const book1 = await getBookData(epubFile);
+// console.log({
+// 	title: book1.bookTitle,
+// 	altTitle: book1.alternativeTitle,
+// 	embeddedImages: book1.embeddedImages,
+// 	sectionsOrder: book1.sectionsOrder,
+// 	sections: book1.sections.map((section) => {
+// 		return {
+// 			id: section.id,
+// 			characterCount: section.characterCount,
+// 			htmlContent: "rawhtml",
+// 		};
+// 	}),
+// 	tableOfContents: book1.tableOfContents,
+// });
