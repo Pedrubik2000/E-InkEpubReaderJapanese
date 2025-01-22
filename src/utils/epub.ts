@@ -12,12 +12,17 @@ export interface TableOfContentsItem {
 	displayText: string;
 	cumulativeCharacterCount: number;
 }
+export interface SectionsOrderItem {
+	targetFile: string;
+	id: string;
+}
 export interface BookData {
 	bookTitle: string;
 	alternativeTitle: string;
 	sections: BookSection[];
 	tableOfContents: TableOfContentsItem[];
 	globalStyles: string;
+	sectionsOrder: SectionsOrderItem[];
 	embeddedImages: EmbeddedImage[];
 	totalCharacterCount: number;
 }
@@ -82,7 +87,43 @@ async function parseOpfFile(opfContent: string): Promise<Partial<BookData>> {
 			return jobj.package.metadata.title["#text"];
 		})() ?? "";
 
-	return { bookTitle, alternativeTitle };
+	const sectionsOrder = (() => {
+		const sectionsOrderItems: SectionsOrderItem[] = [];
+		const manifestItems = jobj.package.manifest.item;
+		for (const element of manifestItems) {
+			if (element["@_media-type"].includes("html")) {
+				if (
+					element["@_href"].includes("nav") ||
+					element["@_id"].includes("toc")
+				) {
+					continue;
+				}
+				sectionsOrderItems.push({
+					targetFile: element["@_href"],
+					id: element["@_id"],
+				});
+			}
+		}
+		return sectionsOrderItems;
+	})();
+	return { bookTitle, alternativeTitle, sectionsOrder };
+}
+async function parseNavHtml(navHtml: string) {
+	const tableOfContentsItems: TableOfContentsItem[] = [];
+	const result = balanced("<ol>", "</ol>", navHtml) ?? {
+		body: "",
+	};
+	const matchs = result.body.matchAll(/href="(.*?)".*?>(.*?)</g);
+	for (const match of matchs) {
+		if (match[1] && match[2]) {
+			tableOfContentsItems.push({
+				targetFile: match[1].replace(/#.*/, ""),
+				displayText: match[2],
+				cumulativeCharacterCount: 0,
+			});
+		}
+	}
+	return tableOfContentsItems;
 }
 export async function getBookData(epubBuffer: Buffer | File) {
 	const epubZip = new JSZip();
@@ -94,6 +135,7 @@ export async function getBookData(epubBuffer: Buffer | File) {
 		sections: [],
 		tableOfContents: [],
 		globalStyles: "",
+		sectionsOrder: [],
 		embeddedImages: [],
 		totalCharacterCount: 0,
 	};
@@ -110,13 +152,18 @@ export async function getBookData(epubBuffer: Buffer | File) {
 			const opfData = await parseOpfFile(data);
 			bookData.bookTitle = opfData.bookTitle ?? "";
 			bookData.alternativeTitle = opfData.alternativeTitle ?? "";
+			bookData.sectionsOrder = opfData.sectionsOrder ?? [];
 			continue;
 		}
 		if (key.includes("nav") && key.includes("html")) {
+			const data = await values.async("string");
+			const navHtmlData = await parseNavHtml(data);
+			bookData.tableOfContents = navHtmlData;
 			continue;
 		}
 
 		if (key.includes("html")) {
+			console.log(key);
 			const data = await values.async("string");
 			const htmlData = await parseHtmlFile(data);
 			bookData.totalCharacterCount += htmlData.characterCount ?? 0;
@@ -148,16 +195,39 @@ export async function getBookData(epubBuffer: Buffer | File) {
 			//remove body.something
 			//remove body{}
 			const data = await values.async("string");
-			globalStyles += data;
+			globalStyles += data.replace(/body/, "div");
 			globalStyles += "\n";
 		}
 	}
 	bookData.globalStyles = globalStyles;
 	bookData.embeddedImages = embeddedImages;
+	const sectionsOrderFileTargets = bookData.sectionsOrder.map((sectionItem) => {
+		const sectionItemSplitted = sectionItem.targetFile.split("/");
+		return sectionItemSplitted[sectionItemSplitted.length - 1];
+	});
+	bookData.sections.sort((a, b) => {
+		const aSplitted = a.sourceFile.split("/");
+		const bSplitted = b.sourceFile.split("/");
+		return (
+			sectionsOrderFileTargets.indexOf(aSplitted[aSplitted.length - 1]) -
+			sectionsOrderFileTargets.indexOf(bSplitted[bSplitted.length - 1])
+		);
+	});
 	return bookData;
 }
 
 import fs from "node:fs";
-const epubFile = fs.readFileSync("/home/pedro/Downloads/danmachi v19.epub");
+const epubFile = fs.readFileSync(
+	"/home/pedro/Downloads/kumakumakuma v001.epub",
+);
 const book1 = await getBookData(epubFile);
-console.log(book1);
+console.log(book1.sectionsOrder);
+console.log(
+	book1.sections.map((section) => {
+		return {
+			sourceFile: section.sourceFile,
+			characterCount: section.characterCount,
+		};
+	}),
+);
+console.log(book1.tableOfContents);
