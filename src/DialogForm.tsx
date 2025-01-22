@@ -1,23 +1,13 @@
 import { useEffect, useRef, useState } from "react";
-import { openDB, deleteDB, wrap, unwrap } from "idb";
-import type { Book } from "./utils/epub";
-import type { DBSchema } from "idb";
+import { openDB } from "idb";
+import type { BookData } from "./utils/epub";
 import "./DialogForm.css";
-import { folder } from "jszip";
-
-interface MyDB extends DBSchema {
-	[title: string]: {
-		key: string;
-		value: number;
-		series: string[];
-	};
-}
 
 export function DialogForm({
 	book,
 	isOpen,
 	onClose,
-}: { book: Book; isOpen: boolean; onClose: () => void }) {
+}: { book: BookData; isOpen: boolean; onClose: () => void }) {
 	const [blobUrl, setBlobUrl] = useState("");
 	const [blobUrlName, setBlobUrlName] = useState("");
 	const [selectItems, setSelectItems] = useState<JSX.Element[]>([]);
@@ -34,17 +24,17 @@ export function DialogForm({
 	useEffect(() => {
 		// Convert the Blob to a URL
 
-		const coverBlobs = book.blobs.filter((blob) => {
-			return blob.name.includes("cover");
+		const coverBlobs = book.embeddedImages.filter((blob) => {
+			return blob.fileName.includes("cover");
 		});
-		const objectUrl = URL.createObjectURL(coverBlobs[0].blob);
+		const objectUrl = URL.createObjectURL(coverBlobs[0].dataBlob);
 		setBlobUrl(objectUrl);
-		setBlobUrlName(coverBlobs[0].name);
+		setBlobUrlName(coverBlobs[0].fileName);
 
 		const listItems = coverBlobs.map((blob) => {
 			return (
-				<option key={blob.name} value={blob.name}>
-					{blob.name}
+				<option key={blob.fileName} value={blob.fileName}>
+					{blob.fileName}
 				</option>
 			);
 		});
@@ -63,9 +53,9 @@ export function DialogForm({
 		const volId = `${series}${volNumber}`;
 		const selectCover = formData.get("coverImages");
 		const coverBlob = (() => {
-			for (const blob of book.blobs) {
-				if (blob.name === selectCover) {
-					return blob.blob;
+			for (const blob of book.embeddedImages) {
+				if (blob.fileName === selectCover) {
+					return blob.dataBlob;
 				}
 			}
 			return "";
@@ -90,8 +80,8 @@ export function DialogForm({
 				folder: series,
 				vol: volNumber,
 				coverBlob: coverBlob,
-				blobs: book.blobs,
-				html: book.html,
+				blobs: book.embeddedImages,
+				html: book.sections,
 			});
 			await db.put("series", {
 				id: series,
@@ -104,11 +94,11 @@ export function DialogForm({
 		}
 	}
 	function changeImage(event: React.ChangeEvent<HTMLSelectElement>) {
-		const selectedBlob = book.blobs.find(
-			(blob) => blob.name === event.target.value,
+		const selectedBlob = book.embeddedImages.find(
+			(blob) => blob.fileName === event.target.value,
 		);
 		if (selectedBlob) {
-			const objectUrl = URL.createObjectURL(selectedBlob.blob);
+			const objectUrl = URL.createObjectURL(selectedBlob.dataBlob);
 			setBlobUrl(objectUrl);
 		}
 	}
@@ -122,14 +112,14 @@ export function DialogForm({
 						type="text"
 						name="title"
 						id="title"
-						defaultValue={book.title}
+						defaultValue={book.bookTitle}
 					/>
 					<label htmlFor="altTitle">Folder: </label>
 					<input
 						type="text"
 						name="altTitle"
 						id="altTitle"
-						defaultValue={book.altTitle}
+						defaultValue={book.alternativeTitle}
 					/>
 					<label htmlFor="volNumber">Numero de Volumen:</label>
 					<input

@@ -1,17 +1,17 @@
 import { useState } from "react";
-import { getBookObject } from "./utils/epub";
-import type { Book } from "./utils/epub";
+import { getBookData } from "./utils/epub";
+import type { BookData } from "./utils/epub";
 import { DialogForm } from "./DialogForm";
 
 export function UploadButton() {
-	const [bookContent, setBookTitleContent] = useState<Book | null>(null);
+	const [bookContent, setBookTitleContent] = useState<BookData | null>(null);
 	const [isDialogOpen, setIsDialogOpen] = useState(false);
 	const handleFileUpload = async (
 		event: React.ChangeEvent<HTMLInputElement>,
 	) => {
 		const file = event.target.files?.[0];
 		if (file) {
-			const book = await getBookObject(file);
+			const book = await getBookData(file);
 			setBookTitleContent(book);
 			setIsDialogOpen(true);
 		}
