@@ -49,6 +49,7 @@ async function parseHtmlFile(html: string): Promise<Partial<BookSection>> {
 	} else {
 		htmlContent = `<div>${finalResult}</div>`;
 	}
+	console.log(htmlContent);
 	return { htmlContent, characterCount };
 }
 async function parseOpfFile(opfContent: string): Promise<Partial<BookData>> {
@@ -238,20 +239,20 @@ export async function getBookData(epubBuffer: Buffer | File) {
 	return bookData;
 }
 
-// import fs from "node:fs";
-// const epubFile = fs.readFileSync("/home/pedro/Downloads/suzumiya v13.epub");
-// const book1 = await getBookData(epubFile);
-// console.log({
-// 	title: book1.bookTitle,
-// 	altTitle: book1.alternativeTitle,
-// 	embeddedImages: book1.embeddedImages,
-// 	sectionsOrder: book1.sectionsOrder,
-// 	sections: book1.sections.map((section) => {
-// 		return {
-// 			id: section.id,
-// 			characterCount: section.characterCount,
-// 			htmlContent: "rawhtml",
-// 		};
-// 	}),
-// 	tableOfContents: book1.tableOfContents,
-// });
+import fs from "node:fs";
+const epubFile = fs.readFileSync("/home/pedro/Downloads/suzumiya v13.epub");
+const book1 = await getBookData(epubFile);
+console.log({
+	title: book1.bookTitle,
+	altTitle: book1.alternativeTitle,
+	embeddedImages: book1.embeddedImages,
+	sectionsOrder: book1.sectionsOrder,
+	sections: book1.sections.map((section) => {
+		return {
+			id: section.id,
+			characterCount: section.characterCount,
+			htmlContent: "rawhtml",
+		};
+	}),
+	tableOfContents: book1.tableOfContents,
+});

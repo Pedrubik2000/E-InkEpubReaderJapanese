@@ -27,6 +27,12 @@ export function BookSection() {
 				console.log({ RegExpression });
 				console.log({ embeddedImage });
 				htmlContent = htmlContent.replace(RegExpression, objectURL);
+				const globalStyles = bookData.globalStyles;
+				if (globalStyles) {
+					const styleElement = document.createElement("style");
+					styleElement.textContent = globalStyles;
+					document.head.appendChild(styleElement);
+				}
 				console.log(htmlContent);
 			}
 			setHtmlContent(htmlContent);
