@@ -10,19 +10,23 @@ export function BookVols() {
 	);
 	useEffect(() => {
 		const fetchBookFolder = async () => {
-			const db = await openDB("einkreader", 1);
-			const vols = await db.getAll("Volumes");
+			const db = await openDB("eInkReader", 1);
+			const vols = await db.getAll("Books");
 			const volsWithSerie = vols.filter((vol) => {
-				return vol.folder === params.book;
+				return vol.folder === params.folder;
 			});
 			const volsOrdered = volsWithSerie.sort((a, b) => {
-				a.vol - b.vol;
+				a.volNumber - b.volNumber;
 			});
 			const cards = volsOrdered.map((vol) => {
 				return (
-					<div key={vol.volId} className="BookFolder">
-						<Link to={`vol/${vol.title}`}>
-							<img src={URL.createObjectURL(vol.coverBlob)} alt={vol.volId} />
+					<div key={`divKeyBookFolder${vol.volId}`} className="BookFolder">
+						<Link to={`${vol.volNumber}/${vol.currentSectionIndex}`}>
+							<img
+								key={`imgKey${vol.volId}`}
+								src={URL.createObjectURL(vol.coverBlob)}
+								alt={vol.volId}
+							/>
 						</Link>
 					</div>
 				);

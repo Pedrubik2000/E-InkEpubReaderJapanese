@@ -61,29 +61,18 @@ export function DialogForm({
 			return "";
 		})();
 		try {
-			const db = await openDB("einkreader", 1, {
-				upgrade(db) {
-					// Create a store of objects
-					db.createObjectStore("series", {
-						// The 'id' property of the object will be the key.
-						keyPath: "id",
-						// If it isn't explicitly set, create a value by auto incrementing.
-					});
-					db.createObjectStore("Volumes", {
-						keyPath: "id",
-					});
-				},
-			});
-			await db.put("Volumes", {
+			const db = await openDB("eInkReader", 1);
+			await db.put("Books", {
 				id: volId,
 				title: title,
 				folder: series,
-				vol: volNumber,
+				volNumber: volNumber,
 				coverBlob: coverBlob,
-				blobs: book.embeddedImages,
-				html: book.sections,
+				embeddedImages: book.embeddedImages,
+				sections: book.sections,
+				currentSectionIndex: 0,
 			});
-			await db.put("series", {
+			await db.put("Folders", {
 				id: series,
 				series: series,
 				updatedAt: new Date(),

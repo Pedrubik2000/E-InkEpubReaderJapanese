@@ -32,7 +32,7 @@ async function parseHtmlFile(html: string): Promise<Partial<BookSection>> {
 	const result = balanced(/<body.*?>/, "</body>", html) ?? {
 		body: "",
 	};
-	const regexHref = /(?<=href=")(.+?)(?=#.*?")/gm;
+	const regexHref = /(?<=href=")(?=.+?)(#.*?")/gm;
 	const finalResult = result.body.replace(regexHref, "");
 	//Thanks ttusama
 	const sanitizedHtmlForCharacterCount = finalResult
@@ -41,7 +41,6 @@ async function parseHtmlFile(html: string): Promise<Partial<BookSection>> {
 			/[^0-9A-Z○◯々-〇〻ぁ-ゖゝ-ゞァ-ヺー０-９Ａ-Ｚｦ-ﾝ\p{Radical}\p{Unified_Ideograph}]+/gimu,
 			"",
 		);
-	console.log(sanitizedHtmlForCharacterCount);
 	const characterCount = Array.from(sanitizedHtmlForCharacterCount).length;
 	let htmlContent: string;
 	if (classValue) {
@@ -93,10 +92,8 @@ async function parseOpfFile(opfContent: string): Promise<Partial<BookData>> {
 		const manifestItems = jobj.package.manifest.item;
 		for (const element of manifestItems) {
 			if (element["@_media-type"].includes("html")) {
-				if (
-					element["@_href"].includes("nav") ||
-					element["@_id"].includes("toc")
-				) {
+				if (element["@_href"].includes("nav") || element["@_id"] === "toc") {
+					console.log(element["@_id"]);
 					continue;
 				}
 				const href = element["@_href"].split("/");
@@ -162,12 +159,12 @@ export async function getBookData(epubBuffer: Buffer | File) {
 			continue;
 		}
 
-		if (key.includes("html")) {
+		if (key.includes("html") && key.includes(".")) {
 			console.log(key);
 			const data = await values.async("string");
 			const htmlData = await parseHtmlFile(data);
 			const keySplitted = key.split("/");
-			bookData.totalCharacterCount += htmlData.characterCount ?? 0;
+			console.log(keySplitted);
 			bookData.sections.push({
 				id: keySplitted[keySplitted.length - 1].replace(/\..*/, ""),
 				htmlContent: htmlData.htmlContent ?? "<div></div>",
@@ -214,7 +211,7 @@ export async function getBookData(epubBuffer: Buffer | File) {
 			const sectionCharacterCount = bookData.sections[i].characterCount;
 			cumulativeCharacterCount += sectionCharacterCount;
 			i++;
-			if (item.id === bookData.sections[i].id) {
+			if (item.id === bookData.sections[i]?.id) {
 				item.cumulativeCharacterCount = cumulativeCharacterCount;
 				console.log({
 					characterCount: bookData.sections[i].characterCount,
@@ -226,13 +223,23 @@ export async function getBookData(epubBuffer: Buffer | File) {
 			}
 		}
 	}
+	for (const sectionParent of bookData.sections) {
+		for (const section of bookData.sections) {
+			const RegExpression = new RegExp(
+				`(?<!xlink:.*?)(?<=href=")(.*?${section.id}.*?)(?=")`,
+			);
+			const indexNumber = bookData.sectionsOrder.indexOf(section.id);
+			sectionParent.htmlContent = sectionParent.htmlContent.replace(
+				RegExpression,
+				indexNumber.toString(),
+			);
+		}
+	}
 	return bookData;
 }
 
 // import fs from "node:fs";
-// const epubFile = fs.readFileSync(
-// 	"/home/pedro/Downloads/kumakumakuma v001.epub",
-// );
+// const epubFile = fs.readFileSync("/home/pedro/Downloads/suzumiya v13.epub");
 // const book1 = await getBookData(epubFile);
 // console.log({
 // 	title: book1.bookTitle,

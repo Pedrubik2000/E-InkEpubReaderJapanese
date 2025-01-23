@@ -5,15 +5,18 @@ import "./index.css";
 import { BookVols } from "./BookVols.tsx";
 import { BooksFolders } from "./BooksFolders.tsx";
 import App from "./App.tsx";
+import { BookSection } from "./BookSection.tsx";
 
 createRoot(document.getElementById("root")!).render(
 	<BrowserRouter>
 		<Routes>
 			<Route path="/" element={<App />}>
 				<Route index element={<BooksFolders />} />
-				<Route path="book/:book" element={<BookVols />} />
-				<Route path="book/:book/vol/:volTitle" element={<p>a</p>} />
-				<Route path="book/:book/vol/:volTitle/:part" element={<p>a</p>} />
+				<Route path="folder/:folder" element={<BookVols />} />
+				<Route
+					path="folder/:folder/:volNumber/:sectionIndex"
+					element={<BookSection />}
+				/>
 			</Route>
 		</Routes>
 	</BrowserRouter>,
