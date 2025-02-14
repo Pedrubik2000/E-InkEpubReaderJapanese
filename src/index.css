@@ -14,32 +14,96 @@
 }
 html,
 body {
-	height: 100vh; /* Ensure html and body fill the viewport */
-	margin: 0; /* Remove default margin */
-	overflow: hidden; /* Prevent scrolling */
+	height: 100vh;
+	margin: 0;
 }
 
 #root {
-	height: 100vh; /* Ensure #root fills the entire viewport */
+	height: 100vh;
+}
+
+.AppBar {
+	display: flex;
+	flex-direction: column;
+}
+.AppBar > * {
+	flex: 1 1 auto;
 }
 
 .Toolbar {
+	display: flex;
+	align-items: center;
+}
+.Toolbar > * {
+	flex: 1 1 auto;
+	margin: 0;
+}
+
+.AppBar {
 	height: 10vh;
 }
-
-.einkwrapper {
-	height: 85vh; /* Take up the remaining space */
-	overflow: hidden; /* Prevent overflow */
+.Toolbar {
+	margin: 0;
+	border-bottom: solid;
+}
+.dialogForm {
+	width: 80vw;
+	height: 80vh;
+	position: fixed;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	margin: 0;
+}
+.dialogForm > form {
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+}
+.dialogForm > form > * {
+	flex: 1 1 auto;
+}
+.dialogForm > form > .imgWrapper {
+	contain: size;
+	display: flex;
+	justify-content: center; /* Center the content horizontally */
+	align-items: center; /* Center the content vertically */
+	height: 100%; /* Take up full available space */
+}
+.dialogForm > form > .imgWrapper > img {
+	max-width: 100%;
+	max-height: 100%;
+	object-fit: contain;
+}
+.cardsContainer {
+	height: 90vh;
+	margin: 10px;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+}
+.coverCard {
+	height: calc(40vh - 20px);
+	width: calc((40vh - 20px) / 3 * 2);
+	overflow: hidden;
+	display: flex;
+	justify-content: center;
+}
+.coverCard img {
+	height: 100%;
+	object-fit: cover;
 }
 
-.einkwrapper svg,
-.einkwrapper img {
-	width: auto; /* Allow the width to adjust */
-	height: auto; /* Allow the height to adjust */
-	max-width: 100%; /* Constrain within the parent width */
-	max-height: 100%; /* Constrain within the parent height */
-	margin: auto; /* Center within the parent container */
-}
-.navigation-buttons {
-	height: 5vh; /* Prevent navigation buttons from shrinking */
+.bookSection {
+	contain: size;
+	height: 90vh;
+	width: 100%;
+	padding: 10px;
+	writing-mode: vertical-rl;
+	box-sizing: border-box;
+	overflow-x: hidden;
+	overflow-y: hidden;
+	white-space: nowrap;
+	scroll-behavior: smooth;
 }

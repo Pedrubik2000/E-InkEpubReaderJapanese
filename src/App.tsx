@@ -1,43 +1,18 @@
-import "remixicon/fonts/remixicon.css";
-import { UploadButton } from "./UploadButton";
 import { Outlet } from "react-router";
-import { openDB } from "idb";
-import { useEffect } from "react";
-
-function Toolbar() {
-	return (
-		<div style={{ borderStyle: "solid" }} className="Toolbar">
-			<UploadButton />
-		</div>
-	);
-}
-
-function App() {
-	useEffect(() => {
-		const createDataBase = async () => {
-			const db = await openDB("eInkReader", 1, {
-				upgrade(db) {
-					// Create a store of objects
-					db.createObjectStore("Folders", {
-						// The 'id' property of the object will be the key.
-						keyPath: "id",
-						// If it isn't explicitly set, create a value by auto incrementing.
-					});
-					db.createObjectStore("Books", {
-						keyPath: "id",
-					});
-				},
-			});
-		};
-		createDataBase();
-		console.log("Creating Database");
-	});
+import { AppBar } from "./components/AppBar";
+import { Toolbar } from "./components/Toolbar";
+import { Breadcrumbs } from "./components/Breadcrumbs";
+import { InputEpub } from "./components/InputEpub";
+export function App() {
 	return (
 		<>
-			<Toolbar />
+			<AppBar>
+				<Toolbar>
+					<Breadcrumbs />
+					<InputEpub />
+				</Toolbar>
+			</AppBar>
 			<Outlet />
 		</>
 	);
 }
-
-export default App;

@@ -1,20 +1,23 @@
-// import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router";
+import { App } from "./App";
 import "./index.css";
-import { BookVols } from "./BookVols.tsx";
-import { BooksFolders } from "./BooksFolders.tsx";
-import App from "./App.tsx";
-import { BookSection } from "./BookSection.tsx";
+import { FoldersContainer } from "./components/FoldersContainer";
+import { BooksContainer } from "./components/BooksContainer.tsx";
+import { BookSection } from "./components/BookSection.tsx";
 
-createRoot(document.getElementById("root")!).render(
+const domNode = document.getElementById("root");
+const root = createRoot(domNode!);
+
+root.render(
 	<BrowserRouter>
 		<Routes>
 			<Route path="/" element={<App />}>
-				<Route index element={<BooksFolders />} />
-				<Route path="folder/:folder" element={<BookVols />} />
+				<Route index element={<FoldersContainer />} />
+				<Route path="folder/:folder" element={<BooksContainer />} />
+				<Route path="folder/:folder/book/:book" element={<BooksContainer />} />
 				<Route
-					path="folder/:folder/:volNumber/:sectionIndex"
+					path="folder/:folder/book/:book/section/:section"
 					element={<BookSection />}
 				/>
 			</Route>

@@ -194,7 +194,10 @@ export async function getBookData(epubBuffer: Buffer | File) {
 			//remove body.something
 			//remove body{}
 			const data = await values.async("string");
-			globalStyles += data.replace(/body/, "div");
+			globalStyles += data
+				.replace(/body/g, "div")
+				.replace(/text-indent:.*/g, "")
+				.replace(/(?<=height:\s)(\s*auto)/g, "100%");
 			globalStyles += "\n";
 		}
 	}
@@ -236,23 +239,28 @@ export async function getBookData(epubBuffer: Buffer | File) {
 			);
 		}
 	}
+	bookData.totalCharacterCount = bookData.sections.reduce(
+		(accumulator, currentSection) =>
+			accumulator + currentSection.characterCount,
+		0,
+	);
 	return bookData;
 }
 
-import fs from "node:fs";
-const epubFile = fs.readFileSync("/home/pedro/Downloads/suzumiya v13.epub");
-const book1 = await getBookData(epubFile);
-console.log({
-	title: book1.bookTitle,
-	altTitle: book1.alternativeTitle,
-	embeddedImages: book1.embeddedImages,
-	sectionsOrder: book1.sectionsOrder,
-	sections: book1.sections.map((section) => {
-		return {
-			id: section.id,
-			characterCount: section.characterCount,
-			htmlContent: "rawhtml",
-		};
-	}),
-	tableOfContents: book1.tableOfContents,
-});
+// import fs from "node:fs";
+// const epubFile = fs.readFileSync("/home/pedro/Downloads/suzumiya v13.epub");
+// const book1 = await getBookData(epubFile);
+// console.log({
+// 	title: book1.bookTitle,
+// 	altTitle: book1.alternativeTitle,
+// 	embeddedImages: book1.embeddedImages,
+// 	sectionsOrder: book1.sectionsOrder,
+// 	sections: book1.sections.map((section) => {
+// 		return {
+// 			id: section.id,
+// 			characterCount: section.characterCount,
+// 			htmlContent: "rawhtml",
+// 		};
+// 	}),
+// 	tableOfContents: book1.tableOfContents,
+// });
